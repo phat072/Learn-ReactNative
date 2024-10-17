@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, FlatList, Button, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { workouts } from '../../data/index';
 
 // Định nghĩa kiểu cho props
@@ -29,10 +29,11 @@ const Workouts: React.FC<WorkoutListProps> = ({ selectedItems, setSelectedItems 
       renderItem={({ item }: { item: WorkoutItem }) => (
         <View style={styles.item}>
           <Text>{item.type}</Text>
-          <Button
-            title={selectedItems.includes(item.type) ? 'DESELECT' : 'SELECT'}
-            onPress={() => toggleSelection(item.type)}
-          />
+          <TouchableOpacity onPress={() => toggleSelection(item.type)} style={styles.button}>
+            <Text style={styles.buttonText}>
+              {selectedItems.includes(item.type) ? 'DESELECT' : 'SELECT'}
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
     />
@@ -43,8 +44,20 @@ const styles = StyleSheet.create({
   item: {
     padding: 10,
     marginVertical: 5,
-    backgroundColor: '#f9c2ff',
+    backgroundColor: '#f1f1f1',
     borderRadius: 5,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  button: {
+    padding: 5,
+    backgroundColor: '#6200ee',
+    borderRadius: 3,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 15,
   },
 });
 
