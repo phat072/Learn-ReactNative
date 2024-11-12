@@ -7,11 +7,11 @@ export const useUpdateNote = () => {
 
   const alert = () =>
     Alert.alert("Warning", "Please enter a title and note", [
-      { text: "Oke", style: "default" },
+      { text: "Okay", style: "default" },
     ]);
 
   const handleUpdateNote = async (id: string, noteState: { title: string; note: string; }) => {
-    if (!title || !note) {
+    if (!noteState.title || !noteState.note) {
       console.log("Validation failed");
       alert();
       return;
@@ -23,7 +23,7 @@ export const useUpdateNote = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ title, note }),
+        body: JSON.stringify({ title: noteState.title, note: noteState.note }),
       });
 
       if (!response.ok) {
@@ -33,9 +33,6 @@ export const useUpdateNote = () => {
       }
 
       console.log("Note updated successfully");
-      // Optionally reset state after successful update
-      setTitle("");
-      setNote("");
     } catch (error) {
       if (error instanceof Error) {
         console.error("Failed to update note:", error.message);

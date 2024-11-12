@@ -1,23 +1,32 @@
 import React, { useState, useEffect } from "react";
 import { View, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { AntDesign, Octicons } from "@expo/vector-icons";
-import { RouteProp, useRoute } from "@react-navigation/native";
+import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
 import { HomeNativeStackParamList } from "../../../type";
 import NoteAction from "@/src/hook"; // Assuming the actions (create, update, get) are inside this hook
-import { useTheme } from "@/src/hook/useTheme"; // Updated import for useTheme
+import { useTheme } from "@/src/hook/useTheme";
 
-export const NoteAppHomeScreen = () => {
+type NoteHomeScreenComponentProps = {
+  onRefresh?: () => void; // Make it optional
+};
+
+export const NoteAppHomeScreen = ({ onRefresh = () => {} }: NoteHomeScreenComponentProps) => { 
   const {
-    params: { id },
+    params: { id }
   } = useRoute<RouteProp<HomeNativeStackParamList, "NoteApp">>();
-
-  const { themeState } = useTheme(); // Accessing the theme from the context
+  
+  const { themeState } = useTheme(); 
   const { handleCreateNote } = NoteAction.useCreateNote();
   const { handleGetListNote } = NoteAction.useGetListNote();
   const { handleUpdateNote } = NoteAction.useUpdateNote();
+  const [refreshKey, setRefreshKey] = useState(0); // Key to trigger re-render
+
+  useEffect(() => {
+    handleGetListNote(); // Fetch notes when the component mounts or refreshKey changes
+  }, [refreshKey]);
 
   const fontSize = themeState.fontSize || 16;
-
+  const navigation = useNavigation();
   // State management for creating and updating notes
   const [createNoteState, setCreateNoteState] = useState({
     state: "idle",
@@ -35,23 +44,24 @@ export const NoteAppHomeScreen = () => {
     },
   });
 
-  // useEffect(() => {
-  //   if (id) {
-  //     // If an ID exists, fetch the note details for updating
-  //     const fetchNoteDetails = async () => {
-  //       const fetchedNote = await NoteAction.handleGetNoteById(id);
-  //       if (fetchedNote) {
-  //         setUpdateNoteState({
-  //           state: "idle",
-  //           content: fetchedNote,
-  //         });
-  //       }
-  //     };
-
-  //     fetchNoteDetails();
-  //   }
-  // }, [id]);
-
+  function BacktoHome() {
+    onRefresh();  
+    setRefreshKey((prev) => prev + 1);  // Trigger re-render by updating the key
+    
+    navigation.reset({
+      index: 0,
+      routes: [
+        {
+          name: "HomeScreen",
+          params: {
+            screen: "Main",  // Make sure you reset to the Main screen in HomeNativeStack
+          },
+        },
+      ],
+    });
+  }
+  
+  
   return (
     <View
       style={[
@@ -133,12 +143,13 @@ export const NoteAppHomeScreen = () => {
         <TouchableOpacity
           onPress={() => {
             if (!id) {
-              handleCreateNote(createNoteState.contents); // Pass the note data when creating a note
-              handleGetListNote(); // Refresh list after creation
+              handleCreateNote(createNoteState.contents);
+              handleGetListNote();
             } else {
               handleUpdateNote(id, updateNoteState.content); // Pass the updated note data
               handleGetListNote(); // Refresh list after update
             }
+            BacktoHome();
           }}
         >
           <AntDesign name="checkcircle" size={44} color="green" />

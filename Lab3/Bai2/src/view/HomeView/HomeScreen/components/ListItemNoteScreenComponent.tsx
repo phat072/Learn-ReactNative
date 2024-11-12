@@ -6,7 +6,7 @@ import {
   ScrollView,
 } from "react-native";
 import { EvilIcons } from "@expo/vector-icons";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { HomeNativeStackParamList } from "../../../type";
 import NoteAction from "@/src/hook";
@@ -16,23 +16,34 @@ type TItemNoteScreenComponentProps = {
   id: string;
   title: string;
   note: string;
+  onRefresh: () => void; // Add prop to trigger refresh
 };
 
-export const ItemNoteScreenComponent: React.FC<TItemNoteScreenComponentProps> = (props) => {
-  const { title, note, id } = props;
+export const ItemNoteScreenComponent: React.FC<TItemNoteScreenComponentProps> = ({
+  title,
+  note,
+  id,
+  onRefresh,
+}) => {
   const navigation = useNavigation<NavigationProp<HomeNativeStackParamList, "NoteApp">>();
-  const { themeState, setFontSize } = useTheme(); // Use theme from context
-
+  const { themeState } = useTheme(); // Use theme from context
   const setUpdateNote = (noteData: { state: string; content: any }) => {};
-
   const { handleDeleteNote } = NoteAction.useDeleteNote();
-  const { handleGetListNote } = NoteAction.useGetListNote();
 
   const handleSetUpdateNote = () => {
     setUpdateNote({
       state: "hasValue",
       content: { id, title, note },
     });
+  };
+
+  const handleDelete = async () => {
+    try {
+      await handleDeleteNote(id); // Xoá ghi chú
+      onRefresh(); // Refresh list after deletion
+    } catch (error) {
+      console.error("Error deleting note:", error);
+    }
   };
 
   return (
@@ -52,7 +63,7 @@ export const ItemNoteScreenComponent: React.FC<TItemNoteScreenComponentProps> = 
           <Text
             style={[
               styles.title,
-              { fontSize: themeState.fontSize }, // Dynamically set fontSize
+              { fontSize: themeState.fontSize },
               themeState.theme === "Dark" && styles.darkText,
             ]}
           >
@@ -61,19 +72,14 @@ export const ItemNoteScreenComponent: React.FC<TItemNoteScreenComponentProps> = 
           <Text
             style={[
               styles.note,
-              { fontSize: themeState.fontSize }, // Dynamically set fontSize
+              { fontSize: themeState.fontSize },
               themeState.theme === "Dark" && styles.darkText,
             ]}
           >
             {note}
           </Text>
         </View>
-        <TouchableOpacity
-          onPress={() => {
-            handleDeleteNote(id);
-            handleGetListNote();
-          }}
-        >
+        <TouchableOpacity onPress={handleDelete}>
           <EvilIcons
             name="trash"
             size={42}
@@ -88,15 +94,21 @@ export const ItemNoteScreenComponent: React.FC<TItemNoteScreenComponentProps> = 
 export const ListItemNoteScreenComponent = () => {
   const { listNote, handleGetListNote } = NoteAction.useGetListNote();
   const { themeState } = useTheme(); // Use theme from context
+  const [refreshKey, setRefreshKey] = useState(0); // Key to trigger re-render
 
   useEffect(() => {
-    handleGetListNote(); // Fetch the notes when the component mounts
-  }, []);
+    handleGetListNote(); // Fetch notes when the component mounts or refreshKey changes
+  }, [refreshKey]);
 
   const { state, contents } = listNote;
 
   return (
-    <ScrollView style={[styles.scrollView, { backgroundColor: themeState.theme === "Dark" ? "#1A1A1A" : "#FFFFFF" }]}>
+    <ScrollView
+      style={[
+        styles.scrollView,
+        { backgroundColor: themeState.theme === "Dark" ? "#1A1A1A" : "#FFFFFF" },
+      ]}
+    >
       {state === "hasValue" &&
         contents
           .filter((item: { id: React.Key | null | undefined }) => item.id !== null && item.id !== undefined)
@@ -106,10 +118,19 @@ export const ListItemNoteScreenComponent = () => {
               id={item.id.toString()}
               title={item.title}
               note={item.note}
+              onRefresh={() => setRefreshKey((prev) => prev + 1)} // Increment key to force re-render
             />
           ))}
-      {state === "loading" && <Text style={{ color: themeState.theme === "Dark" ? "white" : "black" }}>Loading...</Text>}
-      {state === "error" && <Text style={{ color: themeState.theme === "Dark" ? "white" : "black" }}>Error loading notes</Text>}
+      {state === "loading" && (
+        <Text style={{ color: themeState.theme === "Dark" ? "white" : "black" }}>
+          Loading...
+        </Text>
+      )}
+      {state === "error" && (
+        <Text style={{ color: themeState.theme === "Dark" ? "white" : "black" }}>
+          Error loading notes
+        </Text>
+      )}
     </ScrollView>
   );
 };
