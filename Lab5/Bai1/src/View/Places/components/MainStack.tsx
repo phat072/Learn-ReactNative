@@ -14,7 +14,7 @@ const ItemPlaces: FC<{id: string, image: string, title: string, latitude: number
   const navigation = useNavigation<StackNavigationProp<PlacesStackParamList, "MainPlaces">>()
   React.useEffect(()=> {
     (async () => { 
-      const data = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=AIzaSyD-kdOb0kA-y57SoL_GxX9F2jalKUqD5_M`, {
+      const data = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=`, {
         method: "GET"
       })
       console.log(await data.json());
